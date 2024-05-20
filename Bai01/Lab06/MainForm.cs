@@ -10,12 +10,21 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.VisualBasic.ApplicationServices;
+using MailKit.Net.Imap;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
+using MailKit;
 
 namespace Bai07
 {
     public partial class MainForm : Form
     {
         private string access_token;
+
+        private ImapClient imapClient;
+        private SmtpClient smtpClient;
 
         public MainForm(string tokentype, string accesstoken)
         {
@@ -161,7 +170,7 @@ namespace Bai07
             showMonAn.ShowDialog();*/
             Random rand = new Random();
             int index = rand.Next(danhSachMonAn.Count());
-            ShowMonAn showMonAn = new ShowMonAn(danhSachMonAn.ElementAt(index));
+            ShowMonAn showMonAn = new ShowMonAn(danhSachMonAn.ElementAt(index), smtpClient, userTb.Text.Trim());
             showMonAn.ShowDialog();
         }
 
@@ -245,6 +254,34 @@ namespace Bai07
             {
                 File.Delete("access_token");
                 this.Close();
+            }
+        }
+
+        private async void LoginBt_Click(object sender, EventArgs e)
+        {
+            string username = userTb.Text.Trim();
+            string password = passTb.Text.Trim();
+            await LoginAsync(username, password);
+        }
+
+        private async Task LoginAsync(string email, string password)
+        {
+            try
+            {
+
+                imapClient = new ImapClient();
+                await imapClient.ConnectAsync("imap.gmail.com", 993, SecureSocketOptions.SslOnConnect);
+                await imapClient.AuthenticateAsync(email, password);
+
+                smtpClient = new SmtpClient();
+                await smtpClient.ConnectAsync("smtp.gmail.com", 587 , SecureSocketOptions.StartTls);
+                await smtpClient.AuthenticateAsync(email, password);
+
+                MessageBox.Show("Logged in successfully!");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Login failed: " + ex.Message);
             }
         }
     }
