@@ -1,36 +1,21 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
+using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using MailKit.Net.Imap;
 using MailKit.Net.Smtp;
-using MailKit.Security;
 using MimeKit;
-using MailKit;
-using Microsoft.VisualBasic.ApplicationServices;
-using Lab06;
-using HtmlAgilityPack;
-using System.IO;
-using System.Reflection.Metadata;
 
 namespace Bai07
 {
     public partial class ShowMonAn : Form
     {
-        /*public ShowMonAn()
-        {
-            InitializeComponent();
-        }*/
         private JToken monan;
         private SmtpClient client;
-        private OpenFileDialog openFileDialog = null;
         private string userMail;
+
         public ShowMonAn(JToken monan, SmtpClient client, string userMail)
         {
             this.client = client;
@@ -50,28 +35,28 @@ namespace Bai07
             lbGia.Size = new Size(38, 15);
             lbGia.Text = monan.Value<float>("gia").ToString();
             panel.Controls.Add(lbGia);
-            //
+
             Label lbDiaChi = new Label();
             lbDiaChi.AutoSize = true;
             lbDiaChi.Location = new Point(181, 55);
             lbDiaChi.Size = new Size(38, 15);
             lbDiaChi.Text = monan.Value<string>("dia_chi").ToString();
             panel.Controls.Add(lbDiaChi);
-            // 
+
             Label lbDongGopTxt = new Label();
             lbDongGopTxt.AutoSize = true;
             lbDongGopTxt.Location = new Point(112, 76);
             lbDongGopTxt.Size = new Size(63, 15);
             lbDongGopTxt.Text = "Đóng góp:";
             panel.Controls.Add(lbDongGopTxt);
-            // 
+
             Label lbGiaTxt = new Label();
             lbGiaTxt.AutoSize = true;
             lbGiaTxt.Location = new Point(112, 34);
             lbGiaTxt.Size = new Size(27, 15);
             lbGiaTxt.Text = "Giá:";
             panel.Controls.Add(lbGiaTxt);
-            // 
+
             Label lbNguoiDongGop = new Label();
             lbNguoiDongGop.AutoSize = true;
             lbNguoiDongGop.ForeColor = Color.LimeGreen;
@@ -79,14 +64,14 @@ namespace Bai07
             lbNguoiDongGop.Size = new Size(40, 15);
             lbNguoiDongGop.Text = monan.Value<string>("nguoi_dong_gop").ToString();
             panel.Controls.Add(lbNguoiDongGop);
-            // 
+
             Label lbDiaChiTxt = new Label();
             lbDiaChiTxt.AutoSize = true;
             lbDiaChiTxt.Location = new Point(112, 55);
             lbDiaChiTxt.Size = new Size(46, 15);
             lbDiaChiTxt.Text = "Địa chỉ:";
             panel.Controls.Add(lbDiaChiTxt);
-            // 
+
             Label lbMonAn = new Label();
             lbMonAn.AutoSize = true;
             lbMonAn.Font = new Font("Segoe UI", 15F);
@@ -95,7 +80,7 @@ namespace Bai07
             lbMonAn.Size = new Size(46, 28);
             lbMonAn.Text = monan.Value<string>("ten_mon_an").ToString();
             panel.Controls.Add(lbMonAn);
-            // 
+
             try
             {
                 PictureBox hinhMonAn = new PictureBox();
@@ -108,42 +93,37 @@ namespace Bai07
             }
             catch
             {
-
+                // Handle error
             }
+
             panel1.Controls.Add(panel);
             this.Text = $"Ăn {lbMonAn.Text} đi!!!!";
         }
 
-        private void btnMailfr_Click(object sender, EventArgs e)
+        private async void btnMailfr_Click(object sender, EventArgs e)
         {
-            string from, to, subject, ten , gia , diachi, nguoidonggop, body, hinh;
+            string from, to, subject, ten, gia, diachi, nguoidonggop, body, hinh;
 
-            ten = "Ten mon: " + monan.Value<string>("ten_mon_an").ToString();
-            gia = "\n Gia mon: " + monan.Value<float>("gia").ToString();
-            diachi = "\n Dia chi: " + monan.Value<string>("dia_chi").ToString();
-            nguoidonggop ="\n Nguoi dong gop: " + monan.Value<string>("nguoi_dong_gop").ToString();
+            ten = "Tên món: " + monan.Value<string>("ten_mon_an").ToString();
+            gia = "\nGiá món: " + monan.Value<float>("gia").ToString();
+            diachi = "\nĐịa chỉ: " + monan.Value<string>("dia_chi").ToString();
+            nguoidonggop = "\nNgười đóng góp: " + monan.Value<string>("nguoi_dong_gop").ToString();
 
             hinh = monan.Value<string>("hinh_anh").ToString();
             body = ten + gia + diachi + nguoidonggop;
             from = userMail;
-            to =  MailTb.Text.Trim();
-            subject = "Nguoi ban moi an";
+            to = MailTb.Text.Trim();
+            subject = "Người bạn mời ăn";
 
             try
             {
                 var message = new MimeMessage();
-                message.From.Add(new MailboxAddress("Sender: ", from));
+                message.From.Add(new MailboxAddress("Sender", from));
                 message.To.Add(new MailboxAddress("", to));
                 message.Subject = subject;
-                //message.Body = BuildBody(body, hinh);
+                message.Body = await BuildBodyAsync(body, hinh);
 
-                message.Body = new TextPart("plain")
-                {
-                    Text = body,
-                };
-                client.SendAsync(message);
-
-
+                await client.SendAsync(message);
                 MessageBox.Show("Email sent successfully.");
             }
             catch (Exception ex)
@@ -151,26 +131,32 @@ namespace Bai07
                 MessageBox.Show($"An error occurred: {ex.Message}");
             }
         }
-        private MimeEntity BuildBody(string text, string filePath)
+
+        private async Task<MimeEntity> BuildBodyAsync(string text, string fileUrl)
         {
             var multipart = new Multipart("mixed");
 
-           
-            multipart.Add(new TextPart("plain")
-                {
-                    Text = text
-                });
-
-            if (!string.IsNullOrEmpty(filePath))
+            multipart.Add(new TextPart("html")
             {
-                multipart.Add(new MimePart()
+                Text = text
+            });
+
+            if (!string.IsNullOrEmpty(fileUrl))
+            {
+                using (var httpClient = new HttpClient())
                 {
-                    Content = new MimeContent(File.OpenRead(filePath), ContentEncoding.Default),
-                    ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
-                    ContentTransferEncoding = ContentEncoding.Base64,
-                    FileName = Path.GetFileName(filePath)
-                });
+                    var imageBytes = await httpClient.GetByteArrayAsync(fileUrl);
+                    var imagePart = new MimePart("image", "jpeg")
+                    {
+                        Content = new MimeContent(new MemoryStream(imageBytes)),
+                        ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+                        ContentTransferEncoding = ContentEncoding.Base64,
+                        FileName = Path.GetFileName(fileUrl)
+                    };
+                    multipart.Add(imagePart);
+                }
             }
+
             return multipart;
         }
     }
