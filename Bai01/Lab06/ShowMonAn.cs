@@ -136,7 +136,7 @@ namespace Bai07
         {
             var multipart = new Multipart("mixed");
 
-            multipart.Add(new TextPart("html")
+            multipart.Add(new TextPart("html  ")
             {
                 Text = text
             });

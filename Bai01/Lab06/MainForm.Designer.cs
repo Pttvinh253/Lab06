@@ -50,6 +50,7 @@
             userTb = new TextBox();
             passTb = new TextBox();
             LoginBt = new Button();
+            lblNotification = new Label();
             tabControl.SuspendLayout();
             tabPage1.SuspendLayout();
             tabPage2.SuspendLayout();
@@ -272,7 +273,7 @@
             // 
             // LoginBt
             // 
-            LoginBt.Location = new Point(386, 14);
+            LoginBt.Location = new Point(292, 12);
             LoginBt.Name = "LoginBt";
             LoginBt.Size = new Size(135, 48);
             LoginBt.TabIndex = 12;
@@ -280,11 +281,22 @@
             LoginBt.UseVisualStyleBackColor = true;
             LoginBt.Click += LoginBt_Click;
             // 
+            // lblNotification
+            // 
+            lblNotification.AutoSize = true;
+            lblNotification.Location = new Point(446, 26);
+            lblNotification.Name = "lblNotification";
+            lblNotification.Size = new Size(13, 20);
+            lblNotification.TabIndex = 13;
+            lblNotification.Text = " ";
+            lblNotification.Click += lblNotification_Click;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(610, 795);
+            Controls.Add(lblNotification);
             Controls.Add(LoginBt);
             Controls.Add(passTb);
             Controls.Add(userTb);
@@ -337,5 +349,6 @@
         private TextBox userTb;
         private TextBox passTb;
         private Button LoginBt;
+        private Label lblNotification;
     }
 }

@@ -16,6 +16,8 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 using MailKit;
+using MailKit.Search;
+using Lab06;
 
 namespace Bai07
 {
@@ -25,13 +27,29 @@ namespace Bai07
 
         private ImapClient imapClient;
         private SmtpClient smtpClient;
-
+        private List<MimeMessage> emails = new List<MimeMessage>();
+        private readonly TimeSpan checkInterval = TimeSpan.FromMinutes(1); // Kiểm tra mỗi phút
         public MainForm(string tokentype, string accesstoken)
         {
             InitializeComponent();
+            InitializeNotifier();
             this.access_token = $"{tokentype} {accesstoken}";
 
         }
+        private void InitializeNotifier()
+        {
+            lblNotification.Text = "Đang kiểm tra email...";
+        }
+
+        private async void StartEmailCheckLoop()
+        {
+            while (true)
+            {
+                CheckEmails();
+                await Task.Delay(checkInterval);
+            }
+        }
+
 
         private JObject user = new JObject();
         private JToken danhSachMonAn;
@@ -262,6 +280,7 @@ namespace Bai07
             string username = userTb.Text.Trim();
             string password = passTb.Text.Trim();
             await LoginAsync(username, password);
+            StartEmailCheckLoop();
         }
 
         private async Task LoginAsync(string email, string password)
@@ -274,7 +293,7 @@ namespace Bai07
                 await imapClient.AuthenticateAsync(email, password);
 
                 smtpClient = new SmtpClient();
-                await smtpClient.ConnectAsync("smtp.gmail.com", 587 , SecureSocketOptions.StartTls);
+                await smtpClient.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
                 await smtpClient.AuthenticateAsync(email, password);
 
                 MessageBox.Show("Logged in successfully!");
@@ -283,6 +302,48 @@ namespace Bai07
             {
                 MessageBox.Show("Login failed: " + ex.Message);
             }
+        }
+
+        private void lblNotification_Click(object sender, EventArgs e)
+        {
+            EmailForm emailForm = new EmailForm(emails);
+            emailForm.Show();
+        }
+
+        private void CheckEmails()
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    var inbox = imapClient.Inbox;
+                    inbox.Open(MailKit.FolderAccess.ReadOnly);
+
+                    var query = SearchQuery.SubjectContains("Người bạn mời ăn");
+                    var uids = inbox.Search(query);
+
+                    emails.Clear();
+                    foreach (var uid in uids)
+                    {
+                        var message = inbox.GetMessage(uid);
+                        emails.Add(message);
+                    }
+
+                    this.Invoke((MethodInvoker)delegate
+                    {
+                        lblNotification.Text = $"Bạn có {emails.Count} email với chủ đề 'Người bạn mời ăn'.";
+                    });
+
+                    imapClient.Disconnect(true);
+                }
+                catch (Exception ex)
+                {
+                    this.Invoke((MethodInvoker)delegate
+                    {
+                        MessageBox.Show($"Error: {ex.Message}");
+                    });
+                }
+            });    
         }
     }
 }
