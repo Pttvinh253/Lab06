@@ -104,10 +104,10 @@ namespace Bai07
         {
             string from, to, subject, ten, gia, diachi, nguoidonggop, body, hinh;
 
-            ten = "Tên món: " + monan.Value<string>("ten_mon_an").ToString();
-            gia = "\nGiá món: " + monan.Value<float>("gia").ToString();
-            diachi = "\nĐịa chỉ: " + monan.Value<string>("dia_chi").ToString();
-            nguoidonggop = "\nNgười đóng góp: " + monan.Value<string>("nguoi_dong_gop").ToString();
+            ten = "<strong>Tên món:</strong> " + monan.Value<string>("ten_mon_an").ToString();
+            gia = "<br/><strong>Giá món:</strong> " + monan.Value<float>("gia").ToString();
+            diachi = "<br/><strong>Địa chỉ:</strong> " + monan.Value<string>("dia_chi").ToString();
+            nguoidonggop = "<br/><strong>Người đóng góp:</strong> " + monan.Value<string>("nguoi_dong_gop").ToString();
 
             hinh = monan.Value<string>("hinh_anh").ToString();
             body = ten + gia + diachi + nguoidonggop;
@@ -118,8 +118,8 @@ namespace Bai07
             try
             {
                 var message = new MimeMessage();
-                message.From.Add(new MailboxAddress("Sender", from));
-                message.To.Add(new MailboxAddress("", to));
+                message.From.Add(new MailboxAddress("",from));
+                message.To.Add(new MailboxAddress("",to));
                 message.Subject = subject;
                 message.Body = await BuildBodyAsync(body, hinh);
 
@@ -134,13 +134,17 @@ namespace Bai07
 
         private async Task<MimeEntity> BuildBodyAsync(string text, string fileUrl)
         {
-            var multipart = new Multipart("mixed");
+            var multipart = new Multipart("related");
 
-            multipart.Add(new TextPart("html  ")
+            // HTML part
+            var htmlBody = new TextPart("html")
             {
-                Text = text
-            });
+                Text = $"<html><body>{text}<br/><img src=\"cid:image1\"/></body></html>"
+            };
 
+            multipart.Add(htmlBody);
+
+            // Image part
             if (!string.IsNullOrEmpty(fileUrl))
             {
                 using (var httpClient = new HttpClient())
@@ -149,10 +153,12 @@ namespace Bai07
                     var imagePart = new MimePart("image", "jpeg")
                     {
                         Content = new MimeContent(new MemoryStream(imageBytes)),
-                        ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+                        ContentDisposition = new ContentDisposition(ContentDisposition.Inline),
                         ContentTransferEncoding = ContentEncoding.Base64,
+                        ContentId = "image1", // Must match the cid in the HTML
                         FileName = Path.GetFileName(fileUrl)
                     };
+
                     multipart.Add(imagePart);
                 }
             }

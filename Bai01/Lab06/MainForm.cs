@@ -41,14 +41,14 @@ namespace Bai07
             lblNotification.Text = "Đang kiểm tra email...";
         }
 
-        private async void StartEmailCheckLoop()
-        {
-            while (true)
-            {
-                CheckEmails();
-                await Task.Delay(checkInterval);
-            }
-        }
+        //private async void StartEmailCheckLoop()
+        //{
+        //    while (true)
+        //    {
+        //        CheckEmails();
+        //        await Task.Delay(checkInterval);
+        //    }
+        //}
 
 
         private JObject user = new JObject();
@@ -280,14 +280,14 @@ namespace Bai07
             string username = userTb.Text.Trim();
             string password = passTb.Text.Trim();
             await LoginAsync(username, password);
-            StartEmailCheckLoop();
+            //StartEmailCheckLoop();
+            CheckEmails();
         }
 
         private async Task LoginAsync(string email, string password)
         {
             try
             {
-
                 imapClient = new ImapClient();
                 await imapClient.ConnectAsync("imap.gmail.com", 993, SecureSocketOptions.SslOnConnect);
                 await imapClient.AuthenticateAsync(email, password);
@@ -306,44 +306,41 @@ namespace Bai07
 
         private void lblNotification_Click(object sender, EventArgs e)
         {
-            EmailForm emailForm = new EmailForm(emails);
+            EmailForm emailForm = new EmailForm(emails,smtpClient);
             emailForm.Show();
         }
 
         private void CheckEmails()
         {
-            Task.Run(() =>
+            try
             {
-                try
+                var inbox = imapClient.Inbox;
+                inbox.Open(MailKit.FolderAccess.ReadOnly);
+
+                var query = SearchQuery.SubjectContains("Người bạn mời ăn");
+                var uids = inbox.Search(query);
+
+                emails.Clear();
+                foreach (var uid in uids)
                 {
-                    var inbox = imapClient.Inbox;
-                    inbox.Open(MailKit.FolderAccess.ReadOnly);
-
-                    var query = SearchQuery.SubjectContains("Người bạn mời ăn");
-                    var uids = inbox.Search(query);
-
-                    emails.Clear();
-                    foreach (var uid in uids)
-                    {
-                        var message = inbox.GetMessage(uid);
-                        emails.Add(message);
-                    }
-
-                    this.Invoke((MethodInvoker)delegate
-                    {
-                        lblNotification.Text = $"Bạn có {emails.Count} email với chủ đề 'Người bạn mời ăn'.";
-                    });
-
-                    imapClient.Disconnect(true);
+                    var message = inbox.GetMessage(uid);
+                    emails.Add(message);
                 }
-                catch (Exception ex)
+
+                this.Invoke((MethodInvoker)delegate
                 {
-                    this.Invoke((MethodInvoker)delegate
-                    {
-                        MessageBox.Show($"Error: {ex.Message}");
-                    });
-                }
-            });    
+                    lblNotification.Text = $"Bạn có {emails.Count} email với chủ đề 'Người bạn mời ăn'.";
+                });
+
+                imapClient.Disconnect(true);
+            }
+            catch (Exception ex)
+            {
+                this.Invoke((MethodInvoker)delegate
+                {
+                    MessageBox.Show($"Error: {ex.Message}");
+                });
+            }    
         }
     }
 }

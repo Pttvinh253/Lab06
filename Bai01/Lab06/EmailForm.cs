@@ -1,16 +1,33 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Net.Http.Json;
+using System.Net;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.VisualBasic.ApplicationServices;
+using MailKit.Net.Imap;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using MimeKit;
+using MailKit;
+using MailKit.Search;
 
 namespace Lab06
 {
     public partial class EmailForm : Form
     {
         private List<MimeMessage> emails;
-
-        public EmailForm(List<MimeMessage> emails)
+        private SmtpClient client;
+        public EmailForm(List<MimeMessage> emails, SmtpClient client)
         {
             InitializeComponent();
+            this.client = client;
             this.emails = emails;
             LoadEmails(emails);
             listViewEmails.ItemActivate += ListViewEmails_ItemActivate;
@@ -41,7 +58,7 @@ namespace Lab06
             {
                 var selectedItem = listViewEmails.SelectedItems[0];
                 var email = (MimeMessage)selectedItem.Tag; // Lấy email từ Tag
-                checkmail cm = new checkmail(); 
+                checkmail cm = new checkmail(email,client); 
                 cm.Show();
             }
         }
