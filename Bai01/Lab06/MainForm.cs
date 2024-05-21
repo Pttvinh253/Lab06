@@ -329,7 +329,7 @@ namespace Bai07
 
                 this.Invoke((MethodInvoker)delegate
                 {
-                    lblNotification.Text = $"Bạn có {emails.Count} email với chủ đề 'Người bạn mời ăn'.";
+                    lblNotification.Text = $"Bạn có {emails.Count} lời mời";
                 });
 
                 imapClient.Disconnect(true);

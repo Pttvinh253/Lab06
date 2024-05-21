@@ -69,6 +69,7 @@
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
+            BackgroundImage = Properties.Resources.Lab3_NT132;
             ClientSize = new Size(734, 448);
             Controls.Add(listViewEmails);
             Name = "EmailForm";

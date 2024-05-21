@@ -267,6 +267,7 @@
             // 
             passTb.Location = new Point(65, 72);
             passTb.Name = "passTb";
+            passTb.PasswordChar = '*';
             passTb.Size = new Size(193, 27);
             passTb.TabIndex = 11;
             passTb.Text = "qbmcjmosgbgbwxck";
@@ -284,7 +285,7 @@
             // lblNotification
             // 
             lblNotification.AutoSize = true;
-            lblNotification.Location = new Point(446, 26);
+            lblNotification.Location = new Point(433, 26);
             lblNotification.Name = "lblNotification";
             lblNotification.Size = new Size(13, 20);
             lblNotification.TabIndex = 13;
